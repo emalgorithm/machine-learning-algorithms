@@ -18,13 +18,11 @@ class GDA:
         for c in range(self.n_classes):
             self.phi[c] = len(y[y == c]) / len(y)
 
-            self.mu[c] = np.sum(X[y == c], axis=0)
+            self.mu[c] = np.sum(X[y == c], axis=0) / len(X[y == c])
 
-        for i, x_i in enumerate(X):
-            for j, x_j in enumerate(X):
-                self.sigma = np.matmul(x_i - self.mu[y[i]], (x_j - self.mu[y[j]]).T)
-
-        self.sigma /= len(X) ** 2
+        # Compute covariance for each matrix and then average them
+        self.sigma = sum([np.cov(X[y == c], rowvar=False) for c in range(self.n_classes)]) / \
+                     self.n_classes
 
     def predict(self, X):
         y_pred = np.zeros(len(X))
@@ -32,7 +30,7 @@ class GDA:
         for i, x in enumerate(X):
             p = np.zeros(self.n_classes)
             for c in range(self.n_classes):
-                p[c] = multivariate_normal.pdf(x, self.mu[c], self.sigma)
+                p[c] = multivariate_normal.pdf(x, self.mu[c], self.sigma, allow_singular=True)
             y_pred[i] = np.argmax(p)
 
         return y_pred
